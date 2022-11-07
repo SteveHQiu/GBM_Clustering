@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+figures/
+figures/*
+archive/
+archive/*
+manual_versioning/
