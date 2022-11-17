@@ -213,3 +213,5 @@ print(df_gbm.groupby(["Sequence number"])["Patient ID"].count())
 # Group by patient ID, count cases
 # For IDs with more than one entry, get max "Record number recode"
 # Check if they had GBM, compare GBM "Record number recode" with max
+
+# Can probably compare rates using chi-squared https://www.medcalc.org/calc/rate_comparison.php

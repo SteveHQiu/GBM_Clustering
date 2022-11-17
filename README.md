@@ -7,4 +7,12 @@ Exploring associations beteen GBM and other neoplasms using SEER dataset
 
 
 **Demo figures**
-![Figure](demo/GBM_associations.png)
+Raw association between GBM and other tumours by site and histology
+![Figure](demo/GBM_assoc.png)
+
+Association between GBM and other tumours by site and histology (normalized by tumour site/histology incidence over entire SEER 17 dataset)
+![Figure](demo/GBM_assoc_norm.png)
+
+Association between GBM and other tumours by site and histology (normalized by tumour site/histology cumulative survival over entire SEER 17 dataset)
+_Cumulative survival for a tumour site/histologic type is calculated as the sum of the months of survival since diagnosis over all cases in SEER 17 dataset_
+![Figure](demo/GBM_assoc_norm_cum.png)
