@@ -19,24 +19,69 @@ COL_SITE = "Site recode ICD-O-3/WHO 2008"
 COL_HIST = "Histologic Type ICD-O-3"
 COL_TYPE = "ICD-O-3 Hist/behav"
 COL_SURV = "Survival months"
+COL_RAD = "Radiation recode"
+COL_ID = "Patient ID"
+COL_SEQ = "Record number recode" # Sequentially numbers a person's tumors within each SEER submission. Order is based on date of diagnosis and then sequence #. 
+COL_FIRST_PRIM = "First malignant primary indicator" # First MALIGNANT cancer; does not necessarily mean first cancer as could have many prior non-malignant neoplasm
+COL_PRIMARY = "Primary by international rules" # Whether its primary or mets
+COL_ORD_PRIM = "Sequence number" # Order of the primary AT THE TIME OF DIAGNOSIS, should only have 1-2 primaries when first diagnosed (rarely should you be walking in with 3+ primaries without being diagnosed) FIXME UNSURE HOW IT CHANGES WITH EACH ENTRY, SHOULD DOUBLE CHECK FOR A SPECIFIC PATIENT WITH MULTIPLE ENTRIES
+GBM_HIST_CODES = [9440, 9441, 9442, 9445]
 
-#%%
+#%% Load CSV
 df = pd.read_csv(ROOT_PATH)
 df[COL_SURV] = pd.to_numeric(df[COL_SURV], errors="coerce") # Coerce converts non-numerics into NaN
 
-
-#%% Process df and get counts 
-df_gbm = df.loc[df[COL_HIST].isin([9440, 9441, 9442, 9445])] # df.isin() method used since "in" operator doesn't work in this context
+if 0: # Visualize variable space of df
+    for col in df.columns:
+        print(col)
+        print(df[col].unique())
+#%% Get different rates of GBM 
+df_gbm = df.loc[df[COL_HIST].isin(GBM_HIST_CODES)] # df.isin() method used since "in" operator doesn't work in this context
 df_gbm.to_csv(F"{ROOT_PATH}_gbm.csv")
-print(df_gbm["Patient ID"].nunique()) 
-# SEER RPD 17 Nov 2021 should have ~81,885,000 total encatchment
-# Also remember that SEER RPD 17 Nov 2021 is cumulative over 19 years 
-gbm_ids = set(df_gbm["Patient ID"].values)
+n_total = df[COL_ID].nunique()
+n_gbm = df_gbm[COL_ID].nunique()
+n_encatchment = 81885000 # SEER RPD 17 Nov 2021 should have ~81,885,000 total encatchment
+n_years = 20 # Also remember that SEER RPD 17 Nov 2021 is cumulative over 20 years 
+print(F'Number of patients: {n_gbm}') 
+print(F'Fraction of encatchment with GBM: {n_gbm / n_encatchment}\nn = {n_gbm}, N = {n_encatchment}') 
+print(F'GBM rate per 100 000 per year: {n_gbm / (n_encatchment / 100000) / n_years}') # Should be roughly 3.19
 
+print(df_gbm[df_gbm[COL_FIRST_PRIM] == "Yes"][COL_SEQ].value_counts()) # Shows which entry GBM was in cases where GBM was first malignancy (i.e., numbers higher than 1 mean that it was preceded by non-malignant lesion)
 
+df_gbm_first = df_gbm[df_gbm[COL_ORD_PRIM].str.contains('One primary only|1st of 2 or more primaries')]
+n_gbm_first = df_gbm_first[COL_ID].nunique() 
+assert n_gbm_first == len(df_gbm_first) # Each entry should be unique
+
+if 0: 
+    for pt_id in df_gbm_first[df_gbm_first[COL_SEQ] != 1][COL_ID]: # Output number of entries for patients where their first GBM primary was not the first SEER entry, FIXME Not sure why there should be any of these in the first place
+        print(len(df[df[COL_ID] == pt_id]))
+
+df_rem = df[COL_ID].isin(df_gbm_first[COL_ID])
+n_rem_entries = df_rem.value_counts()[True] # Number of entries to remove
+print(F"Entries to remove: {n_rem_entries} | Excess: {n_rem_entries - len(df_gbm_first)}")
+df_no_gbm_first = df.drop(df[df_rem].index)
+print(F"Number of entries removed: {len(df) - len(df_no_gbm_first)}")
+n_no_gbm_first = df_no_gbm_first[COL_ID].nunique() 
+
+df_gbm_sec = df_no_gbm_first.loc[df_no_gbm_first[COL_HIST].isin(GBM_HIST_CODES)]
+n_gbm_sec = df_gbm_sec[COL_ID].nunique()
+
+print(F'Fraction of encatchment with primary GBM: {(n_gbm - n_gbm_sec) / n_encatchment}\nn = {(n_gbm - n_gbm_sec)}, N = {n_encatchment}') 
+
+print(F"Fraction of secondary GBM: {n_gbm_sec / n_no_gbm_first}\nn = {n_gbm_sec}, N = {n_no_gbm_first}")
+
+#%% Deprecated? Trying to use sort to get first GBM cases
+df_hist = df.sort_values([COL_ID, COL_SEQ]) \
+    .groupby([COL_ID])[COL_HIST] \
+    .apply(lambda x: x.to_json(orient="records")) \
+    .reset_index(name="Hist_codes") # Collect all codes from histology column for each patient, use .apply(json.loads) to de-serialize each cell
+    # to_json() method: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.to_json.html
+
+#%% Count sites and types for entries 
 df_gbm2 = df.loc[df["SEER Brain and CNS Recode"] == "1.1.2 Glioblastoma"] # Alternative way to get GBM
 print(df_gbm2["Patient ID"].nunique())
 
+gbm_ids = set(df_gbm["Patient ID"].values)
 df_gbm_pt = df.loc[df["Patient ID"].isin(gbm_ids)]
 print(df_gbm_pt["Patient ID"].nunique())
 
