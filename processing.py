@@ -31,7 +31,7 @@ GBM_HIST_CODES = [9440, 9441, 9442, 9445]
 df = pd.read_csv(ROOT_PATH)
 df[COL_SURV] = pd.to_numeric(df[COL_SURV], errors="coerce") # Coerce converts non-numerics into NaN
 #%%
-if 1: # Visualize variable space of df
+if 0: # Visualize variable space of df
     for col in df.columns:
         print(col)
         print(df[col].unique())
@@ -49,6 +49,7 @@ def tempFx(df: DataFrame, frac_gen = 0.000556793063442633):
 
     df_gbm_first = df_gbm[df_gbm[COL_ORD_PRIM].str.contains('One primary only|1st of 2 or more primaries')]
     n_gbm_first = df_gbm_first[COL_ID].nunique() 
+    # df_gbm_first.to_excel(F"{ROOT_NAME}_gbm_first.xlsx")
     assert n_gbm_first == len(df_gbm_first) # Each entry should be unique
 
     if 0: 
@@ -56,6 +57,9 @@ def tempFx(df: DataFrame, frac_gen = 0.000556793063442633):
             print(len(df[df[COL_ID] == pt_id]))
 
     df_rem = df[COL_ID].isin(df_gbm_first[COL_ID])
+    
+    df_gbm_first_rel = df[df[COL_ID].isin(df_gbm_first[COL_ID])]
+    # df_gbm_first_rel.to_excel(F"{ROOT_NAME}_gbm_first_rel.xlsx")
     
     n_rem_entries = df_rem.value_counts()[True] # Number of entries to remove
     print(F"Entries to remove: {n_rem_entries} | Excess: {n_rem_entries - len(df_gbm_first)}")
@@ -65,6 +69,10 @@ def tempFx(df: DataFrame, frac_gen = 0.000556793063442633):
 
     df_gbm_sec = df_no_gbm_first.loc[df_no_gbm_first[COL_HIST].isin(GBM_HIST_CODES)]
     n_gbm_sec = df_gbm_sec[COL_ID].nunique()
+    # df_gbm_sec.to_excel(F"{ROOT_NAME}_gbm_second.xlsx")
+    
+    df_gbm_sec_rel = df[df[COL_ID].isin(df_gbm_sec[COL_ID])]
+    df_gbm_sec_rel.to_excel(F"{ROOT_NAME}_gbm_sec_rel.xlsx")
 
     if not frac_gen: # If general rate of GBM not given, then define it here
         frac_gen = (n_gbm - n_gbm_sec) / n_encatchment
@@ -74,6 +82,7 @@ def tempFx(df: DataFrame, frac_gen = 0.000556793063442633):
     print(F"Fraction of secondary GBM: {frac_sec}\nn = {n_gbm_sec}, N = {n_no_gbm_first}")
     print(F">>> Ratio: {frac_sec/frac_gen} <<<")
 
+tempFx(df)
 #%%
 
 for col in df["Sex"].unique():
