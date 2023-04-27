@@ -8,6 +8,8 @@ figures/*
 archive/
 archive/*
 manual_versioning/
-
+.Rhistory
+.RDataTmp
 
 data/SEER RPD 17 Nov 2021.csv
+data/SEER RPD 17 Nov 2021_firsts.csv

@@ -19,11 +19,15 @@ ROOT_PATH = R"data/SEER RPD 17 Nov 2021.csv"
 ROOT_NAME = os.path.splitext(ROOT_PATH)[0]
 COUNTERS_PATH = R"data/counters.dat"
 COL_AGE = "Age recode with <1 year olds"
+COL_SEX = "Sex"
+COL_DIA_YEAR = "Year of diagnosis"
 COL_SITE = "Site recode ICD-O-3/WHO 2008"
 COL_HIST = "Histologic Type ICD-O-3"
 COL_TYPE = "ICD-O-3 Hist/behav"
 COL_SURV = "Survival months"
 COL_RAD = "Radiation recode"
+COL_CHEMO = "Chemotherapy recode (yes, no/unk)"
+COL_MO_TX = "Months from diagnosis to treatment"
 COL_ID = "Patient ID"
 COL_SEQ = "Record number recode" # Sequentially numbers a person's tumors within each SEER submission. Order is based on date of diagnosis and then sequence #. 
 COL_FIRST_PRIM = "First malignant primary indicator" # First MALIGNANT cancer; does not necessarily mean first cancer as could have many prior non-malignant neoplasm
@@ -384,3 +388,22 @@ print(df_gbm.groupby(["Sequence number"])["Patient ID"].count())
 
 # Can probably compare rates using chi-squared https://www.medcalc.org/calc/rate_comparison.php
 # %%
+df_firsts = df[df[COL_ORD_PRIM].str.contains('One primary only|1st of 2 or more primaries')]
+LOG.info(F"Number of extra entries: {df_firsts[COL_ID].nunique() - len(df_firsts)}")
+
+#%%
+df_gbm_sec = pd.read_excel(R"data\SEER RPD 17 Nov 2021_gbm_second.xlsx")
+LOG.info(F"Number of non-first GBM cases: {df_gbm_sec[COL_ID].nunique()} | Ref: 8238") 
+#%%
+
+df_firsts["Non-first GBM"] = df_firsts[COL_ID].isin(df_gbm_sec[COL_ID])
+LOG.info(F"Number non-first GBMs that had new neoplasm diagnosed 2000 or later: {df_firsts['Non-first GBM'].sum()}")
+df_firsts.to_csv(R"data\SEER RPD 17 Nov 2021_firsts.csv")
+# Core
+# 	Age
+# 	Site
+# 	Histology type
+# Auxilliary 
+# 	Diagnosis year 
+# 	Treatment 
+# 	Sex
